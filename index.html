@@ -114,6 +114,46 @@ select{padding:9px 8px;border:1px solid var(--bo);border-radius:var(--rs);font-s
 .sp{width:36px;height:36px;border:3px solid var(--bo);border-top-color:var(--gr);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .lov p{font-size:14px;color:var(--t2);font-weight:600}
+.nav{overflow-x:auto;scrollbar-width:none;position:sticky;top:0;z-index:80;box-shadow:0 8px 24px rgba(20,18,15,.06)}
+.nav::-webkit-scrollbar{display:none}
+.nb{min-width:76px;white-space:nowrap}
+.hero-note{padding:14px;background:linear-gradient(135deg,#fff8e8,#fff);border:1px solid #f1dfb4;border-radius:var(--rs);margin-bottom:12px}
+.hero-note strong{display:block;font-size:15px;margin-bottom:4px}
+.hero-note p{font-size:12px;color:var(--t2);line-height:1.6}
+.quick-list{display:flex;gap:7px;overflow-x:auto;padding:1px 0 8px;scrollbar-width:none}
+.quick-list::-webkit-scrollbar{display:none}
+.quick{border:1px solid var(--bo);background:#fff;border-radius:999px;padding:7px 11px;font-size:12px;white-space:nowrap;color:var(--t2);cursor:pointer}
+.quick:active{transform:scale(.97)}
+.comment-compose{display:grid;grid-template-columns:110px 1fr auto;gap:7px;align-items:end}
+.comment-compose textarea{min-height:54px;margin:0}
+.comment-compose .sndb{height:54px;font-size:18px}
+.cl{max-height:280px}
+.ci{white-space:pre-wrap;overflow-wrap:anywhere}
+.ci.new{animation:pop .3s ease}
+@keyframes pop{from{transform:translateY(5px);opacity:.3}to{transform:none;opacity:1}}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.section-head h2{font-size:18px}
+.pill-count{font-size:11px;font-weight:700;background:var(--grl);color:var(--grd);padding:5px 9px;border-radius:999px}
+.task-form{display:grid;gap:9px}
+.task-form input[type=text],.manual-form input[type=text]{width:100%;padding:10px 12px;border:1px solid var(--bo);border-radius:var(--rs);font-size:14px;font-family:inherit}
+.task-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start;padding:12px 0;border-bottom:1px solid var(--bo)}
+.task-row:last-child{border-bottom:none}
+.task-check{width:24px;height:24px;accent-color:var(--gr);margin-top:1px}
+.task-title{font-size:14px;font-weight:650;line-height:1.5}
+.task-row.done .task-title{text-decoration:line-through;color:var(--t3)}
+.task-meta{font-size:11px;color:var(--t2);margin-top:3px}
+.icon-btn{border:0;background:transparent;padding:5px;color:var(--t3);font-size:16px;cursor:pointer}
+.manual-card{border:1px solid var(--bo);border-radius:var(--rs);padding:14px;margin-bottom:9px;background:#fff}
+.manual-title{display:flex;gap:9px;align-items:center;font-weight:700;font-size:14px;margin-bottom:7px}
+.manual-body{font-size:13px;color:var(--t2);line-height:1.75;white-space:pre-wrap}
+.manual-form{display:grid;gap:9px;margin-top:12px;padding-top:12px;border-top:1px solid var(--bo)}
+.soft{background:var(--bg);border-radius:var(--rs);padding:12px;font-size:12px;color:var(--t2);line-height:1.7}
+.line-card{background:linear-gradient(135deg,#e9fff2,#fff);border-color:#bce8ce}
+.line-badge{display:inline-flex;align-items:center;gap:5px;background:#06c755;color:#fff;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:700;margin-bottom:9px}
+.report-preview{white-space:pre-wrap;background:#fff;border:1px dashed #b9dcca;border-radius:9px;padding:11px;font-size:12px;line-height:1.65;margin-top:10px}
+.bad-date{font-size:12px;color:var(--or);background:var(--orl);padding:9px;border-radius:8px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:380px){.comment-compose{grid-template-columns:92px 1fr auto}.nb{min-width:72px}.app{padding-left:10px;padding-right:10px}}
 </style>
 </head>
 <body>
@@ -128,13 +168,19 @@ select{padding:9px 8px;border:1px solid var(--bo);border-radius:var(--rs);font-s
     </div>
   </div>
   <div class="nav">
-    <button class="nb on" onclick="showPg('punch')">⏱ 打刻</button>
-    <button class="nb" onclick="showPg('stats')">📊 集計</button>
-    <button class="nb" onclick="showPg('hist')">📋 履歴</button>
-    <button class="nb" onclick="showPg('conf')">⚙️ 設定</button>
+    <button class="nb on" data-page="punch" onclick="showPg('punch')">⏱ 打刻</button>
+    <button class="nb" data-page="stats" onclick="showPg('stats')">📊 集計</button>
+    <button class="nb" data-page="hist" onclick="showPg('hist')">📋 履歴</button>
+    <button class="nb" data-page="tasks" onclick="showPg('tasks')">✅ タスク</button>
+    <button class="nb" data-page="manual" onclick="showPg('manual')">📚 マニュアル</button>
+    <button class="nb" data-page="conf" onclick="showPg('conf')">⚙️ 設定</button>
   </div>
 
   <div class="pg on" id="pg-punch">
+    <div class="hero-note">
+      <strong id="hello">今日も楽しくいこう 🌷</strong>
+      <p id="today-task-note">今日のタスクを確認しています…</p>
+    </div>
     <div class="card">
       <div class="ct">打刻</div>
       <div class="pr">
@@ -162,11 +208,17 @@ select{padding:9px 8px;border:1px solid var(--bo);border-radius:var(--rs);font-s
       <button class="btn" onclick="saveLearning()">💾 保存する</button>
     </div>
     <div class="card">
-      <div class="ct">コメント</div>
-      <div class="cir">
+      <div class="ct">ひとことボード 💌</div>
+      <div class="quick-list" aria-label="定型コメント">
+        <button class="quick" onclick="useQuick('おつかれさま🌷 ')" type="button">おつかれさま🌷</button>
+        <button class="quick" onclick="useQuick('ありがとう✨ ')" type="button">ありがとう✨</button>
+        <button class="quick" onclick="useQuick('確認してね👀 ')" type="button">確認してね👀</button>
+        <button class="quick" onclick="useQuick('今日の学び💡 ')" type="button">今日の学び💡</button>
+      </div>
+      <div class="comment-compose">
         <select id="cw"><option value="yuzu">ゆずちゃん</option><option value="shacho">社長</option></select>
-        <textarea id="ct2" placeholder="ひとことメモ…" style="min-height:52px;margin:0"></textarea>
-        <button class="sndb" onclick="postCmt()">➤</button>
+        <textarea id="ct2" placeholder="伝えたいことを入力…"></textarea>
+        <button class="sndb" onclick="postCmt()" aria-label="コメントを送信">➤</button>
       </div>
       <div class="cl" id="cl"></div>
     </div>
@@ -212,6 +264,39 @@ select{padding:9px 8px;border:1px solid var(--bo);border-radius:var(--rs);font-s
     </div>
   </div>
 
+  <div class="pg" id="pg-tasks">
+    <div class="card">
+      <div class="section-head"><h2>今日のおしごと</h2><span class="pill-count" id="task-count">0件</span></div>
+      <div id="task-list"></div>
+    </div>
+    <div class="card">
+      <div class="ct">タスクを追加</div>
+      <div class="task-form">
+        <input type="text" id="task-title" maxlength="80" placeholder="例：入口とレジまわりを掃除する">
+        <div class="teg" style="margin:0">
+          <div><label class="lbl">担当</label><select id="task-who" style="width:100%"><option value="yuzu">ゆずちゃん</option><option value="shacho">社長</option><option value="both">ふたり</option></select></div>
+          <div><label class="lbl">いつまで</label><input type="date" id="task-due"></div>
+        </div>
+        <button class="btn full" onclick="addTask()">＋ みんなのタスクに追加</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pg" id="pg-manual">
+    <div class="card">
+      <div class="section-head"><h2>おしごとマニュアル</h2><span class="pill-count">いつでも確認</span></div>
+      <div id="manual-list"></div>
+    </div>
+    <div class="card">
+      <div class="ct">マニュアルを追加</div>
+      <div class="manual-form" style="border:0;padding:0;margin:0">
+        <input type="text" id="manual-title" maxlength="60" placeholder="項目名（例：入荷作業）">
+        <textarea id="manual-body" maxlength="800" placeholder="手順や気をつけることを、分かりやすく書こう"></textarea>
+        <button class="btn full" onclick="addManualEntry()">＋ 共有マニュアルに追加</button>
+      </div>
+    </div>
+  </div>
+
   <div class="pg" id="pg-conf">
     <div class="card">
       <div class="ct">設定</div>
@@ -223,8 +308,16 @@ select{padding:9px 8px;border:1px solid var(--bo);border-radius:var(--rs);font-s
     </div>
     <div class="card">
       <div class="ct">同期</div>
-      <p style="font-size:13px;color:var(--t2);line-height:1.8">データはGoogleスプレッドシートに保存されます。<br>ゆずちゃんと社長のスマホでリアルタイムに共有されます。</p>
+      <p style="font-size:13px;color:var(--t2);line-height:1.8">データはGoogleスプレッドシートに保存され、開いている間は20秒ごとに自動更新されます。<br>ゆずちゃんと社長のスマホで同じ内容を共有できます。</p>
       <button class="btn full" onclick="loadAll()" style="margin-top:12px">🔄 今すぐ同期する</button>
+    </div>
+    <div class="card line-card">
+      <span class="line-badge">LINE 月末レポート</span>
+      <div class="stlb">今月の勤務を月末に自動報告</div>
+      <div class="stsb" style="line-height:1.7;margin-top:4px">LINE公式アカウントと安全に連携すると、毎月末に勤務時間・出勤日数・給与見込みを送れます。アクセストークンはこの画面には保存しません。</div>
+      <div class="report-preview" id="report-preview"></div>
+      <button class="btn full" onclick="copyLineReport()">📋 今月のレポートをコピー</button>
+      <p style="font-size:10px;color:var(--t3);line-height:1.55;margin-top:8px">自動送信を有効にするには、同梱のLINE連携設定をGoogle Apps Scriptへ追加してください。</p>
     </div>
   </div>
 </div>
@@ -245,7 +338,7 @@ select{padding:9px 8px;border:1px solid var(--bo);border-radius:var(--rs);font-s
 </div>
 <div class="toast" id="toast"></div>
 
-<script>
+<script type="text/plain" id="legacy-script">
 var GAS = "https://script.google.com/macros/s/AKfycbwR89VP6Iy3z1QNQ51amRtOKrKFwOy0uK64LS2PjxbtnNdBNpaVKc2d20wOiVbcGMKqLA/exec";
 var HDEF = 1200;
 var state = {
@@ -553,5 +646,6 @@ if(state.learn)document.getElementById("lt").value=state.learn;
 setTimeout(function(){document.getElementById("lov").style.display="none";},10000);
 loadAll();
 </script>
+<script src="app.js" defer></script>
 </body>
 </html>
