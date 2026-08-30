@@ -197,8 +197,8 @@ select{padding:9px 8px;border:1px solid var(--bo);border-radius:var(--rs);font-s
       <div class="ct">手動で時間を入力</div>
       <div class="teg">
         <div style="grid-column:1/-1"><label class="lbl">日付</label><input type="date" id="md"></div>
-        <div><label class="lbl">出勤時刻</label><input type="time" id="mi"></div>
-        <div><label class="lbl">退勤時刻</label><input type="time" id="mo"></div>
+        <div><label class="lbl">出勤時刻（10分単位）</label><input type="time" id="mi" step="600"></div>
+        <div><label class="lbl">退勤時刻（10分単位）</label><input type="time" id="mo" step="600"></div>
       </div>
       <button class="btn full" onclick="addManual()">＋ この時間で記録する</button>
     </div>
@@ -326,8 +326,8 @@ select{padding:9px 8px;border:1px solid var(--bo);border-radius:var(--rs);font-s
   <div class="modal">
     <h3>記録を編集</h3>
     <div class="mf"><label>日付</label><input type="date" id="eed"></div>
-    <div class="mf"><label>出勤時刻</label><input type="time" id="eei"></div>
-    <div class="mf"><label>退勤時刻</label><input type="time" id="eeo"></div>
+    <div class="mf"><label>出勤時刻（10分単位）</label><input type="time" id="eei" step="600"></div>
+    <div class="mf"><label>退勤時刻（10分単位）</label><input type="time" id="eeo" step="600"></div>
     <div class="mf"><label>今日の学び</label><textarea id="eel" rows="2" style="min-height:60px"></textarea></div>
     <div class="mbr">
       <button class="bca" onclick="closeMod()">キャンセル</button>

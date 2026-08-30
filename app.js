@@ -84,8 +84,8 @@ function normalizeRecord(record, rate) {
   if (!Number.isFinite(pay) || pay < 0) pay = Math.round(hours * rate);
   return { id: String(record.id || uid()), date: date, inTime: inTime, outTime: outTime, hours: hours, pay: pay, learning: String(record.learning || ""), rawDate: String(record.date || "") };
 }
-function r30(date) {
-  var minute = date.getMinutes(), rounded = minute < 15 ? 0 : minute < 45 ? 30 : 60, next = new Date(date);
+function r10(date) {
+  var next = new Date(date), rounded = Math.round(next.getMinutes() / 10) * 10;
   next.setMinutes(rounded, 0, 0);
   return next;
 }
@@ -202,7 +202,7 @@ function renderToday() {
 }
 
 function punchIn() {
-  var time = r30(new Date());
+  var time = r10(new Date());
   state.inTime = time.toISOString();
   localStorage.setItem("pA_in", state.inTime);
   $("bi").disabled = true;
@@ -212,7 +212,7 @@ function punchIn() {
 }
 async function punchOut() {
   if (!state.inTime) return;
-  var time = r30(new Date()), hours = calcH(state.inTime, time), pay = Math.round(hours * state.rate);
+  var time = r10(new Date()), hours = calcH(state.inTime, time), pay = Math.round(hours * state.rate);
   var record = { id: uid(), date: dStr(new Date()), inTime: state.inTime, outTime: time.toISOString(), hours: hours, pay: pay, learning: state.learn || "" };
   state.records.push(record);
   state.inTime = null;

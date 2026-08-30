@@ -37,6 +37,16 @@ assert.equal(context.normalizeDate("2026-07-19T15:00:00.000Z"), "2026-07-20");
 assert.equal(context.fmtD("2026-08-30"), "8月30日（日）");
 assert.equal(context.dStr(context.getMon("2026-08-30")), "2026-08-24");
 
+const roundedDown = context.r10(new Date(2026, 7, 30, 9, 4, 59));
+const roundedUp = context.r10(new Date(2026, 7, 30, 9, 5, 0));
+const roundedHour = context.r10(new Date(2026, 7, 30, 9, 56, 0));
+assert.equal(roundedDown.getHours(), 9);
+assert.equal(roundedDown.getMinutes(), 0);
+assert.equal(roundedUp.getHours(), 9);
+assert.equal(roundedUp.getMinutes(), 10);
+assert.equal(roundedHour.getHours(), 10);
+assert.equal(roundedHour.getMinutes(), 0);
+
 const record = context.normalizeRecord({
   id: 1,
   date: "Sun Jul 19 2026 00:00:00 GMT+0900",
