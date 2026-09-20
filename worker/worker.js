@@ -45,12 +45,13 @@ async function authorize(request, env) {
 }
 
 async function getAll(env) {
-  const [records, comments, setting] = await Promise.all([
+  const [records, comments, payments, setting] = await Promise.all([
     env.DB.prepare("SELECT id, date, in_time AS inTime, out_time AS outTime, hours, pay, learning FROM records ORDER BY date, in_time").all(),
     env.DB.prepare("SELECT id, who, text, time FROM comments ORDER BY time").all(),
+    env.DB.prepare("SELECT id, month, amount, paid_date AS paidDate, method, note, created_at AS createdAt FROM payments ORDER BY paid_date, created_at").all(),
     env.DB.prepare("SELECT value FROM settings WHERE key = 'hourlyRate'").first()
   ]);
-  return { records: records.results || [], comments: comments.results || [], hourlyRate: Number(setting?.value) || 1200 };
+  return { records: records.results || [], comments: comments.results || [], payments: payments.results || [], hourlyRate: Number(setting?.value) || 1200 };
 }
 
 async function handleAction(body, env) {
@@ -75,6 +76,21 @@ async function handleAction(body, env) {
   if (body.action === "saveSettings") {
     const rate = Math.max(0, Math.round(Number(body.hourlyRate) || 1200));
     await env.DB.prepare("INSERT INTO settings (key, value) VALUES ('hourlyRate', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(String(rate)).run();
+    return { ok: true };
+  }
+  if (body.action === "savePayment") {
+    const payment = body.payment || {};
+    if (!payment.id || !/^\d{4}-\d{2}$/.test(String(payment.month || "")) || !/^\d{4}-\d{2}-\d{2}$/.test(String(payment.paidDate || ""))) {
+      throw new Error("支払い記録の必須項目がありません");
+    }
+    const amount = Math.max(0, Math.round(Number(payment.amount) || 0));
+    if (!amount) throw new Error("支払い金額が正しくありません");
+    await env.DB.prepare("INSERT INTO payments (id, month, amount, paid_date, method, note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET month=excluded.month, amount=excluded.amount, paid_date=excluded.paid_date, method=excluded.method, note=excluded.note")
+      .bind(String(payment.id), String(payment.month), amount, String(payment.paidDate), String(payment.method || "手渡し"), String(payment.note || ""), String(payment.createdAt || new Date().toISOString())).run();
+    return { ok: true };
+  }
+  if (body.action === "deletePayment") {
+    await env.DB.prepare("DELETE FROM payments WHERE id = ?").bind(String(body.id || "")).run();
     return { ok: true };
   }
   throw new Error("不明な操作です");

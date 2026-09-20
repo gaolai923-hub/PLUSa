@@ -21,6 +21,18 @@ CREATE TABLE IF NOT EXISTS settings (
   value TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS payments (
+  id TEXT PRIMARY KEY,
+  month TEXT NOT NULL,
+  amount INTEGER NOT NULL,
+  paid_date TEXT NOT NULL,
+  method TEXT NOT NULL DEFAULT '手渡し',
+  note TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS payments_month_idx ON payments(month, paid_date);
+
 CREATE TABLE IF NOT EXISTS auth_attempts (
   ip TEXT PRIMARY KEY,
   attempts INTEGER NOT NULL DEFAULT 0,

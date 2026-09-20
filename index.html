@@ -156,6 +156,19 @@ select{padding:9px 8px;border:1px solid var(--bo);border-radius:var(--rs);font-s
 .line-badge{display:inline-flex;align-items:center;gap:5px;background:#06c755;color:#fff;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:700;margin-bottom:9px}
 .report-preview{white-space:pre-wrap;background:#fff;border:1px dashed #b9dcca;border-radius:9px;padding:11px;font-size:12px;line-height:1.65;margin-top:10px}
 .bad-date{font-size:12px;color:var(--or);background:var(--orl);padding:9px;border-radius:8px}
+.pay-status{border-radius:var(--rs);padding:13px 14px;margin-bottom:12px;background:var(--bg)}
+.pay-status.paid{background:var(--grl);color:var(--grd)}
+.pay-status.open{background:#fff8e8;color:#6b4b00;border:1px solid #f1dfb4}
+.pay-status-title{font-size:14px;font-weight:750;margin-bottom:5px}
+.pay-status-detail{font-size:12px;line-height:1.65}
+.pay-form{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.pay-form .wide{grid-column:1/-1}
+.pay-form input[type=text]{width:100%;padding:9px 10px;border:1px solid var(--bo);border-radius:var(--rs);font-size:14px;font-family:inherit;background:#fff;color:var(--t1);outline:none}
+.pay-row{border-top:1px solid var(--bo);padding:12px 0;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start}
+.pay-row:first-child{border-top:0}
+.pay-main{font-size:14px;font-weight:700}
+.pay-meta{font-size:11px;color:var(--t2);line-height:1.6;margin-top:3px}
+.pay-delete{border:1px solid var(--bo);background:#fff;border-radius:8px;color:var(--t2);padding:5px 9px;font-size:11px;cursor:pointer}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media(max-width:380px){.comment-compose{grid-template-columns:92px 1fr auto}.nb{min-width:72px}.app{padding-left:10px;padding-right:10px}}
 </style>
@@ -265,6 +278,18 @@ select{padding:9px 8px;border:1px solid var(--bo);border-radius:var(--rs);font-s
       <div class="tabs" id="mtabs"></div>
       <div id="msum"></div>
       <div id="hl"></div>
+    </div>
+    <div class="card">
+      <div class="section-head"><h2>お給料の支払い</h2><span class="pill-count" id="payment-count">0件</span></div>
+      <div id="payment-status"></div>
+      <div class="pay-form" id="payment-form">
+        <div><label class="lbl">支払日</label><input type="date" id="payment-date"></div>
+        <div><label class="lbl">支払金額</label><input type="number" id="payment-amount" min="1" step="1" inputmode="numeric"></div>
+        <div><label class="lbl">支払い方法</label><select id="payment-method" style="width:100%"><option>手渡し</option><option>銀行振込</option><option>その他</option></select></div>
+        <div><label class="lbl">メモ（任意）</label><input type="text" id="payment-note" maxlength="100" placeholder="例：8月分"></div>
+        <button class="btn full wide" type="button" onclick="addPayment()">💴 支払いを記録する</button>
+      </div>
+      <div id="payment-list" style="margin-top:14px"></div>
     </div>
   </div>
 

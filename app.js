@@ -9,6 +9,7 @@ var state = {
   inTime: localStorage.getItem("pA_in") || null,
   records: [],
   comments: [],
+  payments: [],
   rate: parseInt(localStorage.getItem("pA_rate") || HDEF, 10),
   learn: localStorage.getItem("pA_learn") || ""
 };
@@ -163,6 +164,17 @@ async function loadAll() {
     state.records.sort(function (a, b) { return (a.date || "") < (b.date || "") ? -1 : 1; });
     state.comments = (data.comments || []).map(function (comment) {
       return { id: String(comment.id || uid()), who: String(comment.who || "shacho"), text: String(comment.text || ""), time: String(comment.time || new Date().toISOString()) };
+    });
+    state.payments = (data.payments || []).map(function (payment) {
+      return {
+        id: String(payment.id || uid()),
+        month: String(payment.month || ""),
+        amount: Math.max(0, Math.round(num(payment.amount, 0))),
+        paidDate: String(payment.paidDate || ""),
+        method: String(payment.method || "手渡し"),
+        note: String(payment.note || ""),
+        createdAt: String(payment.createdAt || "")
+      };
     });
     localStorage.setItem("pA_rate", state.rate);
     $("ri").value = state.rate;
@@ -342,11 +354,17 @@ async function saveRate() {
 
 function getMoKeys() {
   var set = new Set(state.records.map(function (record) { return record.date && record.date.slice(0, 7); }).filter(function (key) { return /^\d{4}-\d{2}$/.test(key); }));
+  state.payments.forEach(function (payment) { if (/^\d{4}-\d{2}$/.test(payment.month)) set.add(payment.month); });
   return Array.from(set).sort().reverse();
 }
 function renderHist() {
   var months = getMoKeys(), tabs = $("mtabs");
-  if (!months.length) { tabs.innerHTML = ""; $("msum").innerHTML = ""; $("hl").innerHTML = "<p class='empty'>まだ勤務記録はありません</p>"; return; }
+  if (!months.length) {
+    tabs.innerHTML = ""; $("msum").innerHTML = ""; $("hl").innerHTML = "<p class='empty'>まだ勤務記録はありません</p>";
+    $("payment-status").innerHTML = "<p class='empty'>勤務を記録すると、ここで支払いを管理できます</p>";
+    $("payment-list").innerHTML = ""; $("payment-count").textContent = "0件"; $("payment-form").style.display = "none";
+    return;
+  }
   var active = tabs.dataset.act && months.indexOf(tabs.dataset.act) >= 0 ? tabs.dataset.act : months[0];
   tabs.dataset.act = active;
   tabs.innerHTML = months.map(function (month) {
@@ -367,8 +385,59 @@ function renderHist() {
       "<div class='ht'>" + esc(fmtT(record.inTime)) + " 〜 " + esc(fmtT(record.outTime)) + "</div>" +
       "<div class='hr'><span style='color:var(--t2);font-size:13px'>" + record.hours.toFixed(1) + "時間</span><span class='pb2'>" + record.pay.toLocaleString() + "円</span></div>" + learning + "</div>";
   }).join("");
+  renderPayments(active, totalPay);
 }
 function selMo(month) { $("mtabs").dataset.act = month; renderHist(); }
+
+function renderPayments(month, wageTotal) {
+  var payments = state.payments.filter(function (payment) { return payment.month === month; }).sort(function (a, b) {
+    return (b.paidDate + b.createdAt).localeCompare(a.paidDate + a.createdAt);
+  });
+  var paidTotal = payments.reduce(function (sum, payment) { return sum + payment.amount; }, 0);
+  var remaining = Math.max(0, wageTotal - paidTotal), over = Math.max(0, paidTotal - wageTotal);
+  $("payment-count").textContent = payments.length + "件";
+  $("payment-form").style.display = wageTotal > 0 ? "grid" : "none";
+  if (!wageTotal) {
+    $("payment-status").innerHTML = "<div class='pay-status'><div class='pay-status-title'>この月の勤務記録はありません</div></div>";
+  } else if (remaining === 0) {
+    $("payment-status").innerHTML = "<div class='pay-status paid'><div class='pay-status-title'>✅ 支払い済み</div><div class='pay-status-detail'>給与 " + wageTotal.toLocaleString() + "円 ／ 支払済み " + paidTotal.toLocaleString() + "円" + (over ? "（超過 " + over.toLocaleString() + "円）" : "") + "</div></div>";
+  } else {
+    $("payment-status").innerHTML = "<div class='pay-status open'><div class='pay-status-title'>💴 未払い " + remaining.toLocaleString() + "円</div><div class='pay-status-detail'>給与 " + wageTotal.toLocaleString() + "円 ／ 支払済み " + paidTotal.toLocaleString() + "円</div></div>";
+  }
+  if ($("payment-amount").dataset.month !== month) {
+    $("payment-amount").dataset.month = month;
+    $("payment-amount").value = remaining || "";
+    $("payment-note").value = "";
+  }
+  $("payment-list").innerHTML = payments.length ? payments.map(function (payment) {
+    var note = payment.note ? " · " + esc(payment.note) : "";
+    return "<div class='pay-row'><div><div class='pay-main'>" + payment.amount.toLocaleString() + "円</div><div class='pay-meta'>" + esc(fmtD(payment.paidDate)) + " · " + esc(payment.method) + note + "</div></div><button class='pay-delete' onclick=\"deletePayment('" + esc(payment.id) + "')\">削除</button></div>";
+  }).join("") : "<p class='empty'>この月の支払い記録はまだありません</p>";
+}
+
+async function addPayment() {
+  var month = $("mtabs").dataset.act, amount = Math.round(Number($("payment-amount").value)), paidDate = $("payment-date").value;
+  if (!month || !paidDate || !Number.isFinite(amount) || amount <= 0) return toast("⚠️ 支払日と金額を確認してください");
+  var wageTotal = state.records.filter(function (record) { return record.date && record.date.indexOf(month) === 0; }).reduce(function (sum, record) { return sum + record.pay; }, 0);
+  var paidTotal = state.payments.filter(function (payment) { return payment.month === month; }).reduce(function (sum, payment) { return sum + payment.amount; }, 0);
+  var remaining = Math.max(0, wageTotal - paidTotal);
+  if (amount > remaining && !confirm("未払い額より " + (amount - remaining).toLocaleString() + "円多い金額です。\nこの金額で記録しますか？")) return;
+  var payment = { id: uid(), month: month, amount: amount, paidDate: paidDate, method: $("payment-method").value, note: $("payment-note").value.trim(), createdAt: new Date().toISOString() };
+  state.payments.push(payment);
+  $("payment-amount").value = ""; $("payment-note").value = "";
+  renderHist(); setSy("ld", "⟳ 支払い履歴を保存中...");
+  if (await apiPost({ action: "savePayment", payment: payment })) toast("✅ 支払い履歴を保存しました");
+  else { state.payments = state.payments.filter(function (item) { return item.id !== payment.id; }); renderHist(); }
+}
+
+async function deletePayment(id) {
+  var payment = state.payments.find(function (item) { return item.id === id; });
+  if (!payment || !confirm(payment.amount.toLocaleString() + "円の支払い記録を削除しますか？")) return;
+  state.payments = state.payments.filter(function (item) { return item.id !== id; });
+  renderHist(); setSy("ld", "⟳ 支払い履歴を更新中...");
+  if (await apiPost({ action: "deletePayment", id: id })) toast("支払い記録を削除しました");
+  else { state.payments.push(payment); renderHist(); }
+}
 function openEd(id) {
   editId = id;
   var record = state.records.find(function (item) { return item.id === id; });
@@ -551,7 +620,7 @@ async function copyLineReport() {
 function init() {
   var now = new Date(), days = ["日", "月", "火", "水", "木", "金", "土"];
   $("dt").textContent = now.getFullYear() + "年" + (now.getMonth() + 1) + "月" + now.getDate() + "日（" + days[now.getDay()] + "）";
-  $("md").value = dStr(now); $("task-due").value = dStr(now); $("ri").value = state.rate;
+  $("md").value = dStr(now); $("task-due").value = dStr(now); $("payment-date").value = dStr(now); $("ri").value = state.rate;
   if (state.inTime) { $("bi").disabled = true; $("bo").disabled = false; $("sb").innerHTML = "🟢 出勤中：<strong>" + fmtT(state.inTime) + "</strong> から"; }
   if (state.learn) $("lt").value = state.learn;
   $("lov-msg").textContent = "みんなのデータを同期中...";

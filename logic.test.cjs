@@ -66,4 +66,12 @@ context.state.comments = [
 assert.equal(context.taskEvents().length, 1);
 assert.equal(context.taskEvents()[0].done, true);
 
+context.state.payments = [
+  { id: "p1", month: "2026-08", amount: 5000, paidDate: "2026-08-31", method: "手渡し", note: "一部", createdAt: "2026-08-31T10:00:00Z" }
+];
+context.renderPayments("2026-08", 7200);
+assert.match(elements.get("payment-status").innerHTML, /未払い 2,200円/);
+assert.equal(elements.get("payment-count").textContent, "1件");
+assert.equal(elements.get("payment-amount").value, 2200);
+
 console.log("PLUSa logic tests passed");
