@@ -1,6 +1,7 @@
 "use strict";
 
-var GAS = "https://script.google.com/macros/s/AKfycbwR89VP6Iy3z1QNQ51amRtOKrKFwOy0uK64LS2PjxbtnNdBNpaVKc2d20wOiVbcGMKqLA/exec";
+var API = String(window.PLUSA_API_URL || "").replace(/\/$/, "");
+var ACCESS_CODE_KEY = "pA_access_code";
 var HDEF = 1200;
 var TASK_PREFIX = "__PLUSA_TASK_V1__";
 var MANUAL_PREFIX = "__PLUSA_MANUAL_V1__";
@@ -125,17 +126,38 @@ function setSy(kind, message) {
 }
 
 async function apiFetch(url, options) {
+  options = options || {};
+  options.headers = Object.assign({}, options.headers || {}, {
+    "Authorization": "Bearer " + (localStorage.getItem(ACCESS_CODE_KEY) || ""),
+    "Content-Type": "application/json"
+  });
   var response = await fetch(url, options);
+  if (response.status === 401 || response.status === 429) {
+    localStorage.removeItem(ACCESS_CODE_KEY);
+    openSyncLogin(response.status === 429 ? "入力回数が多いため、15分ほど待ってからお試しください" : "合言葉を確認してください");
+    throw new Error("AUTH " + response.status);
+  }
   if (!response.ok) throw new Error("HTTP " + response.status);
   var text = await response.text();
   return text ? JSON.parse(text) : {};
 }
 async function loadAll() {
   if (loading) return;
+  if (!API) {
+    setSy("er", "⚠️ 同期の準備中です");
+    if (firstLoad) { firstLoad = false; $("lov").style.display = "none"; }
+    return;
+  }
+  if (!localStorage.getItem(ACCESS_CODE_KEY)) {
+    setSy("er", "🔒 同期の接続が必要です");
+    if (firstLoad) { firstLoad = false; $("lov").style.display = "none"; }
+    openSyncLogin();
+    return;
+  }
   loading = true;
   setSy("ld", "⟳ 同期中...");
   try {
-    var data = await apiFetch(GAS + "?action=getAll&t=" + Date.now(), { method: "GET", redirect: "follow" });
+    var data = await apiFetch(API + "?action=getAll&t=" + Date.now(), { method: "GET" });
     state.rate = num(data.hourlyRate, state.rate || HDEF);
     state.records = (data.records || []).map(function (record) { return normalizeRecord(record, state.rate); });
     state.records.sort(function (a, b) { return (a.date || "") < (b.date || "") ? -1 : 1; });
@@ -159,7 +181,8 @@ async function loadAll() {
 }
 async function apiPost(body) {
   try {
-    await apiFetch(GAS, { method: "POST", redirect: "follow", body: JSON.stringify(body) });
+    if (!localStorage.getItem(ACCESS_CODE_KEY)) { openSyncLogin(); return false; }
+    await apiFetch(API, { method: "POST", body: JSON.stringify(body) });
     setSy("ok", "✅ 保存・同期済み");
     return true;
   } catch (error) {
@@ -168,6 +191,30 @@ async function apiPost(body) {
     toast("通信を確認して、もう一度お試しください");
     return false;
   }
+}
+
+function openSyncLogin(message) {
+  if (message) $("sync-login-error").textContent = message;
+  $("sync-login").classList.add("open");
+  setTimeout(function () { $("access-code").focus(); }, 50);
+}
+function closeSyncLogin() { $("sync-login").classList.remove("open"); }
+async function connectSync() {
+  var code = $("access-code").value.trim();
+  if (code.length < 8) { $("sync-login-error").textContent = "合言葉を8文字以上で入力してください"; return; }
+  localStorage.setItem(ACCESS_CODE_KEY, code);
+  $("sync-login-error").textContent = "";
+  closeSyncLogin();
+  firstLoad = true;
+  $("lov-msg").textContent = "安全に接続しています...";
+  $("lov").style.display = "flex";
+  await loadAll();
+}
+function disconnectSync() {
+  if (!confirm("この端末の同期設定を解除しますか？\n勤務データそのものは消えません。")) return;
+  localStorage.removeItem(ACCESS_CODE_KEY);
+  setSy("er", "🔒 同期の接続が必要です");
+  openSyncLogin("この端末の接続を解除しました");
 }
 
 function showPg(name) {

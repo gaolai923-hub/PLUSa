@@ -45,6 +45,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif;bac
 .lbl{font-size:11px;color:var(--t2);font-weight:600;display:block;margin-bottom:4px}
 input[type=date],input[type=time],input[type=number]{width:100%;padding:9px 10px;border:1px solid var(--bo);border-radius:var(--rs);font-size:14px;font-family:inherit;background:#fff;color:var(--t1);outline:none}
 input:focus{border-color:var(--gr)}
+input[type=password]{width:100%;padding:11px 12px;border:1px solid var(--bo);border-radius:var(--rs);font-size:18px;font-family:inherit;background:#fff;color:var(--t1);outline:none;letter-spacing:.08em}
+input[type=password]:focus{border-color:var(--gr)}
 textarea{width:100%;border:1px solid var(--bo);border-radius:var(--rs);padding:10px 12px;font-size:14px;font-family:inherit;resize:vertical;min-height:68px;background:#fff;color:var(--t1);outline:none}
 textarea:focus{border-color:var(--gr)}
 .btn{margin-top:8px;padding:9px 20px;border:1.5px solid var(--gr);border-radius:var(--rs);background:transparent;font-size:13px;font-weight:600;cursor:pointer;color:var(--gr)}
@@ -114,6 +116,8 @@ select{padding:9px 8px;border:1px solid var(--bo);border-radius:var(--rs);font-s
 .sp{width:36px;height:36px;border:3px solid var(--bo);border-top-color:var(--gr);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .lov p{font-size:14px;color:var(--t2);font-weight:600}
+.sync-help{font-size:12px;color:var(--t2);line-height:1.7;margin:-5px 0 12px}
+.sync-error{min-height:20px;color:var(--or);font-size:12px;margin-top:7px}
 .nav{overflow-x:auto;scrollbar-width:none;position:sticky;top:0;z-index:80;box-shadow:0 8px 24px rgba(20,18,15,.06)}
 .nav::-webkit-scrollbar{display:none}
 .nb{min-width:76px;white-space:nowrap}
@@ -308,8 +312,9 @@ select{padding:9px 8px;border:1px solid var(--bo);border-radius:var(--rs);font-s
     </div>
     <div class="card">
       <div class="ct">同期</div>
-      <p style="font-size:13px;color:var(--t2);line-height:1.8">データはGoogleスプレッドシートに保存され、開いている間は20秒ごとに自動更新されます。<br>ゆずちゃんと社長のスマホで同じ内容を共有できます。</p>
+      <p style="font-size:13px;color:var(--t2);line-height:1.8">勤務データは専用の安全な保存先へ暗号化通信で保存され、開いている間は20秒ごとに自動更新されます。<br>同じ合言葉を設定した端末だけで内容を共有できます。</p>
       <button class="btn full" onclick="loadAll()" style="margin-top:12px">🔄 今すぐ同期する</button>
+      <button class="btn full" onclick="disconnectSync()">🔒 この端末の接続を解除</button>
     </div>
     <div class="card line-card">
       <span class="line-badge">LINE 月末レポート</span>
@@ -317,7 +322,7 @@ select{padding:9px 8px;border:1px solid var(--bo);border-radius:var(--rs);font-s
       <div class="stsb" style="line-height:1.7;margin-top:4px">LINE公式アカウントと安全に連携すると、毎月末に勤務時間・出勤日数・給与見込みを送れます。アクセストークンはこの画面には保存しません。</div>
       <div class="report-preview" id="report-preview"></div>
       <button class="btn full" onclick="copyLineReport()">📋 今月のレポートをコピー</button>
-      <p style="font-size:10px;color:var(--t3);line-height:1.55;margin-top:8px">自動送信を有効にするには、同梱のLINE連携設定をGoogle Apps Scriptへ追加してください。</p>
+      <p style="font-size:10px;color:var(--t3);line-height:1.55;margin-top:8px">自動送信は、新しい安全な同期サーバーへLINE連携情報を登録すると有効にできます。</p>
     </div>
   </div>
 </div>
@@ -336,10 +341,20 @@ select{padding:9px 8px;border:1px solid var(--bo);border-radius:var(--rs);font-s
     </div>
   </div>
 </div>
+
+<div class="modal-bg" id="sync-login">
+  <div class="modal">
+    <h3>🔒 親子のデータに接続</h3>
+    <p class="sync-help">最初の一度だけ、親子で共有する合言葉を入力してください。この端末に安全に記憶され、次回からは自動で同期します。</p>
+    <div class="mf"><label for="access-code">合言葉</label><input type="password" id="access-code" minlength="8" autocomplete="current-password" placeholder="8文字以上"></div>
+    <div class="sync-error" id="sync-login-error"></div>
+    <div class="mbr"><button class="bsv" onclick="connectSync()">接続する</button></div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script type="text/plain" id="legacy-script">
-var GAS = "https://script.google.com/macros/s/AKfycbwR89VP6Iy3z1QNQ51amRtOKrKFwOy0uK64LS2PjxbtnNdBNpaVKc2d20wOiVbcGMKqLA/exec";
+var GAS = "";
 var HDEF = 1200;
 var state = {
   inTime: localStorage.getItem("pA_in") || null,
@@ -646,6 +661,7 @@ if(state.learn)document.getElementById("lt").value=state.learn;
 setTimeout(function(){document.getElementById("lov").style.display="none";},10000);
 loadAll();
 </script>
+<script src="config.js"></script>
 <script src="app.js" defer></script>
 </body>
 </html>
