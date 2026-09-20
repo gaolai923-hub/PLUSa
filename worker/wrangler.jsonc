@@ -3,6 +3,8 @@
   "name": "plusa-secure-sync",
   "main": "worker.js",
   "compatibility_date": "2026-08-27",
+  "workers_dev": true,
+  "preview_urls": false,
   "vars": {
     "ALLOWED_ORIGINS": "https://gaolai923-hub.github.io,http://127.0.0.1:4173,http://localhost:4173"
   },
@@ -10,7 +12,7 @@
     {
       "binding": "DB",
       "database_name": "plusa-data",
-      "database_id": "REPLACE_AFTER_CREATE"
+      "database_id": "53813e61-607b-4ead-a933-88b38a82a09e"
     }
   ]
 }
